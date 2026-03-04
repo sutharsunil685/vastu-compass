@@ -45,7 +45,7 @@ const VASTU_RULES = {
   laundry: { ideal: ['North-West', 'South-East'], forbidden: ['North-East'], priority: 'P3', remedy: 'Drainage to North.', science: 'Chemical/Moisture handling.' },
   staircase: { ideal: ['South', 'West'], forbidden: ['North-East', 'Center'], priority: 'P1', remedy: 'Odd number steps.', science: 'Weight represents Earth energy.' },
   balcony: { ideal: ['North', 'East', 'North-East'], forbidden: ['South'], priority: 'P3', remedy: 'Light shrubs only.', science: 'Ventilation without Southern heat.' },
-  basement: { ideal: ['North', 'East', 'North-East'], forbidden: ['South-West'], priority: 'P2', remedy: 'NE corner open to sky.', science: 'Magnetic-sensitive NE zone.' },
+  basement: { ideal: ['North', 'East', 'North-East'], forbidden: ['South-West'], priority: 'P2', remedy: 'Keep NE corner open to sky.', science: 'Magnetic-sensitive NE zone.' },
   terrace: { ideal: ['South', 'West'], forbidden: ['North-East'], priority: 'P3', remedy: 'SW corner highest point.', science: 'Thermal protection.' },
   parking: { ideal: ['North-West', 'South-East'], forbidden: ['North-East'], priority: 'P3', remedy: 'Slope to North.', science: 'Moving Energy zone.' },
   garage: { ideal: ['North-West', 'South-East'], forbidden: ['South-West'], priority: 'P3', remedy: 'Yellow walls.', science: 'Stability avoidance.' },
@@ -53,7 +53,7 @@ const VASTU_RULES = {
   water_tank_underground: { ideal: ['North-East', 'North'], forbidden: ['South-West'], priority: 'P1', remedy: 'Leakproof tank.', science: 'Thermal mass in NE.' },
   water_tank_overhead: { ideal: ['South-West', 'West'], forbidden: ['North-East'], priority: 'P1', remedy: 'Raised platform.', science: 'Balances magnetic pull.' },
   borewell: { ideal: ['North-East', 'North'], forbidden: ['South-West'], priority: 'P1', remedy: 'Avoid diagonals.', science: 'Groundwater access.' },
-  septic_tank: { ideal: ['North-West'], forbidden: ['North-East'], priority: 'P1', remedy: 'Away from walls.', science: 'Gas dissipation.' },
+  septic_tank: { ideal: ['North-West'], forbidden: ['North-East', 'Center'], priority: 'P1', remedy: 'Away from walls.', science: 'Gas dissipation.' },
   electrical_panel: { ideal: ['South-East'], forbidden: ['North-East'], priority: 'P2', remedy: 'Keep it accessible and clean.', science: 'Fire element.' },
   inverter: { ideal: ['South-East', 'North-West'], forbidden: ['North-East'], priority: 'P3', remedy: 'Wooden stand.', science: 'Heat safety.' },
   generator_room: { ideal: ['South-East', 'North-West'], forbidden: ['North-East'], priority: 'P2', remedy: 'Soundproofing.', science: 'Noise isolation.' },
@@ -235,6 +235,7 @@ const App = () => {
       </header>
 
       <div className="flex flex-1 overflow-hidden relative">
+        {/* Sidebar */}
         <aside className={`${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} absolute md:relative md:translate-x-0 z-30 w-72 md:w-80 bg-white border-r h-full flex flex-col shadow-xl md:shadow-none transition-transform duration-300 no-print`}>
           <div className="p-4 border-b flex gap-1 bg-slate-50 overflow-x-auto scrollbar-hide">
             {CATEGORIES.map(cat => (
@@ -323,12 +324,12 @@ const App = () => {
               height: `${Math.min(95, 95 / canvasAspectRatio)}%`,
               maxWidth: '800px', maxHeight: '800px'
             }}
-            className="relative bg-white shadow-2xl border-[15px] md:border-[25px] border-slate-800 transition-all duration-300 rounded-[2rem] z-10 print:hidden"
+            className="relative bg-white shadow-2xl border-[15px] md:border-[25px] border-slate-800 transition-all duration-300 rounded-[2rem] z-10 print:static print:w-full print:max-w-none print:shadow-none"
           >
             {/* Architectural Rulers on Plot Boundary */}
             {showDimensions && (
               <>
-                <div className="absolute -top-12 left-0 right-0 h-10 pointer-events-none flex justify-between items-end pb-1 px-1">
+                <div className="absolute -top-12 left-0 right-0 h-10 pointer-events-none flex justify-between items-end pb-1 px-1 no-print">
                   {[0, 0.25, 0.5, 0.75, 1].map(v => (
                     <div key={v} className="flex flex-col items-center">
                        <span className="text-[9px] font-black text-slate-400">{formatFtIn(v * plotSize.width)}</span>
@@ -337,7 +338,7 @@ const App = () => {
                   ))}
                   <div className="absolute inset-x-0 bottom-0 h-0.5 bg-slate-200" />
                 </div>
-                <div className="absolute -left-16 top-0 bottom-0 w-14 pointer-events-none flex flex-col justify-between items-end pr-1 py-1">
+                <div className="absolute -left-16 top-0 bottom-0 w-14 pointer-events-none flex flex-col justify-between items-end pr-1 py-1 no-print">
                   {[0, 0.25, 0.5, 0.75, 1].map(v => (
                     <div key={v} className="flex items-center gap-1.5">
                        <span className="text-[9px] font-black text-slate-400">{formatFtIn(v * plotSize.length)}</span>
@@ -376,9 +377,16 @@ const App = () => {
                     else setDraggingId(room.id);
                     setSelectedId(room.id);
                   }}
+                  onTouchStart={(e) => {
+                    // Mobile Touch Start for drag/resize
+                    e.stopPropagation();
+                    if (e.target.closest('.resizer')) setResizingId(room.id);
+                    else setDraggingId(room.id);
+                    setSelectedId(room.id);
+                  }}
                   className={`absolute flex flex-col items-center justify-center cursor-grab active:cursor-grabbing transition-all z-20 group shadow-2xl rounded-2xl border-2 border-white/80
                     ${isActive ? 'ring-4 ring-indigo-500 z-30' : 'hover:scale-[1.02]'} 
-                    ${t?.color || 'bg-white'}`}
+                    ${t?.color || 'bg-white'} touch-none`}
                   style={{ 
                     left: `${room.x}%`, top: `${room.y}%`, 
                     width: `${wP}%`, height: `${hP}%`, 
@@ -389,20 +397,24 @@ const App = () => {
                     {room.type.includes('entrance') ? <ArrowUpRight className="text-white" size={14} /> : <Maximize className="text-white" size={14} />}
                   </div>
                   <span className="text-[7px] md:text-[9px] font-black text-white text-center leading-none uppercase truncate w-full px-2 tracking-tighter drop-shadow-sm">{room.name}</span>
+                  
                   {isActive && (
                     <div className="absolute -top-14 left-1/2 -translate-x-1/2 flex gap-2 z-[60] pointer-events-auto bg-white p-1.5 rounded-full shadow-2xl border border-slate-200 no-print">
-                      <button onMouseDown={(e) => { e.stopPropagation(); setRooms(rooms.map(r => r.id === room.id ? {...r, rotation: (r.rotation + 90) % 360} : r)); }} className="bg-slate-50 p-2 rounded-full shadow-sm hover:text-indigo-600 hover:bg-indigo-50 border text-slate-600" title="Rotate"><RotateCw size={14} /></button>
-                      <button onMouseDown={(e) => { e.stopPropagation(); setRooms(rooms.filter(r => r.id !== room.id)); setSelectedId(null); }} className="bg-slate-50 p-2 rounded-full shadow-sm text-rose-500 hover:bg-rose-50 border" title="Delete"><Trash2 size={14} /></button>
+                      <button onMouseDown={(e) => { e.stopPropagation(); setRooms(rooms.map(r => r.id === room.id ? {...r, rotation: (r.rotation + 90) % 360} : r)); }} onTouchStart={(e) => { e.stopPropagation(); setRooms(rooms.map(r => r.id === room.id ? {...r, rotation: (r.rotation + 90) % 360} : r)); }} className="bg-slate-50 p-2 rounded-full shadow-sm hover:text-indigo-600 hover:bg-indigo-50 border text-slate-600" title="Rotate"><RotateCw size={14} /></button>
+                      <button onMouseDown={(e) => { e.stopPropagation(); setRooms(rooms.filter(r => r.id !== room.id)); setSelectedId(null); }} onTouchStart={(e) => { e.stopPropagation(); setRooms(rooms.filter(r => r.id !== room.id)); setSelectedId(null); }} className="bg-slate-50 p-2 rounded-full shadow-sm text-rose-500 hover:bg-rose-50 border" title="Delete"><Trash2 size={14} /></button>
                     </div>
                   )}
-                  <div className="resizer absolute -bottom-2 -right-2 w-7 h-7 bg-white rounded-full flex items-center justify-center cursor-nwse-resize shadow-xl border-2 border-indigo-500 pointer-events-auto z-40 opacity-0 group-hover:opacity-100 no-print">
+                  
+                  <div className="resizer absolute -bottom-2 -right-2 w-7 h-7 bg-white rounded-full flex items-center justify-center cursor-nwse-resize shadow-xl border-2 border-indigo-500 pointer-events-auto z-40 opacity-0 md:opacity-0 group-hover:opacity-100 no-print touch-none">
                     <Scale size={14} className="text-indigo-600" />
                   </div>
+
                   {showDimensions && (
                     <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 text-[9px] font-mono font-black text-slate-600 whitespace-nowrap bg-white/95 px-2 py-1 rounded shadow-lg border">
                       {formatFtIn(room.widthFt)} x {formatFtIn(room.heightFt)}
                     </div>
                   )}
+
                   <div className={`absolute -top-2 -left-2 w-7 h-7 md:w-8 md:h-8 rounded-full border-4 border-white flex items-center justify-center shadow-2xl transform -rotate-[inherit]
                     ${audit.status === 'GOOD' ? 'bg-emerald-500' : audit.status === 'CRITICAL' ? 'bg-rose-500' : 'bg-orange-500'}`}>
                     {audit.status === 'GOOD' ? <CheckCircle size={14} className="text-white" /> : <AlertTriangle size={14} className="text-white" />}
@@ -411,12 +423,17 @@ const App = () => {
               );
             })}
           </div>
+
+          <div className="absolute bottom-10 left-1/2 -translate-x-1/2 bg-white/95 backdrop-blur-xl px-12 py-4 rounded-full border border-slate-200 shadow-2xl flex items-center gap-4 z-10 no-print">
+            <div className="w-2.5 h-2.5 bg-indigo-500 rounded-full animate-pulse" />
+            <div className="flex flex-col"><span className="text-[12px] font-black text-slate-800 uppercase tracking-[0.4em]">Design & Audit Studio</span><span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none mt-1">Mobile & Web Interaction Enabled</span></div>
+          </div>
         </main>
       </div>
 
-      {/* AUDIT REPORT MODAL - DESIGNED FOR FULL PRINTING FLOW */}
+      {/* AUDIT REPORT MODAL */}
       {isReportOpen && (
-        <div className="fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-0 md:p-4 print:static print:bg-white print:p-0">
+        <div className="fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-0 md:p-4 print:static print:bg-white print:p-0 no-print-background">
            <div className="bg-white w-full max-w-5xl h-full md:h-[90vh] rounded-none md:rounded-[2.5rem] shadow-2xl flex flex-col overflow-hidden animate-in fade-in duration-200 print:static print:h-auto print:rounded-none print:shadow-none print:overflow-visible">
               <div className="p-6 md:p-8 border-b flex justify-between items-center bg-emerald-50 shrink-0 no-print">
                  <div className="flex items-center gap-4">
@@ -439,18 +456,9 @@ const App = () => {
                     <p className="font-bold text-slate-400 uppercase tracking-widest">Ref No: VS-{new Date().getTime().toString().slice(-6)} • Date: {new Date().toLocaleDateString()}</p>
                  </div>
 
-                 {/* ENLARGED ARCHITECTURAL BLUEPRINT PREVIEW */}
+                 {/* ENLARGED BLUEPRINT Snapshot in Report */}
                  <div className="relative bg-slate-50 border-2 border-slate-200 rounded-[3rem] p-12 md:p-16 flex items-center justify-center mb-10 shadow-inner print:bg-white print:border-slate-800 print:p-12 print:mb-12 print:break-after-page min-h-[500px] md:min-h-[700px]">
-                    <div 
-                      style={{ 
-                        width: '100%',
-                        height: '100%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        minHeight: '400px'
-                      }}
-                    >
+                    <div className="w-full h-full flex items-center justify-center min-h-[400px]">
                       <div 
                         style={{ 
                           width: canvasAspectRatio > 1 ? '100%' : `${100 * canvasAspectRatio}%`,
@@ -461,7 +469,7 @@ const App = () => {
                         }}
                         className="relative bg-white shadow-2xl border-[15px] md:border-[20px] border-slate-900 rounded-[1.5rem] flex items-center justify-center overflow-visible"
                       >
-                        {/* Rulers replicated inside preview */}
+                        {/* Architectural Rulers on Snapshot */}
                         <div className="absolute -top-12 left-0 right-0 h-10 pointer-events-none flex justify-between items-end pb-1 px-1">
                             {[0, 0.25, 0.5, 0.75, 1].map(v => (
                               <div key={v} className="flex flex-col items-center">
@@ -557,12 +565,16 @@ const App = () => {
                         })}
                     </div>
                  </div>
+
+                 <div className="hidden print:block pt-16 border-t-2 mt-16 text-center pb-8">
+                    <p className="text-[10px] font-black uppercase text-slate-300 tracking-[0.6em]">Authorized VastuSetu Elite Report • Sthapatya Veda Division</p>
+                 </div>
               </div>
            </div>
         </div>
       )}
 
-      {/* Global Style for Printing and Range Input Customization */}
+      {/* Global Style for Printing and Mobile Compass */}
       <style dangerouslySetInnerHTML={{ __html: `
         @media print {
           /* Force standard document flow instead of fixed viewport modal */
@@ -576,12 +588,13 @@ const App = () => {
           body * { visibility: hidden; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
           #printable-report, #printable-report * { visibility: visible; }
           #printable-report { 
-            position: absolute !important; 
-            left: 0; 
-            top: 0; 
-            width: 100% !important; 
+            position: relative !important; 
             display: block !important;
+            width: 100% !important; 
+            height: auto !important; 
             overflow: visible !important;
+            margin: 0 !important;
+            padding: 0 !important;
           }
           /* Reset modal container to allow page breaks */
           .fixed.inset-0 { 
@@ -612,6 +625,7 @@ const App = () => {
           .print\\:border-emerald-500 { border-color: #10b981 !important; }
           .print\\:break-after-page { page-break-after: always !important; break-after: page !important; }
           .print\\:break-inside-avoid { page-break-inside: avoid !important; break-inside: avoid !important; }
+          .print\\:block { display: block !important; }
         }
         input[type=range]::-webkit-slider-thumb { border: 2px solid white; height: 16px; width: 16px; border-radius: 50%; background: #4f46e5; cursor: pointer; -webkit-appearance: none; margin-top: -7px; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
